@@ -5,20 +5,20 @@ import { DBConfig } from '../../DBModule/DBConfig';
 import { DBClient } from '../../DBModule/DBClient';
 import { v4 } from 'uuid';
 
-class InventoryDBHandler{
+class InventoryDBHandler {
     private uuidv4 = v4;
 
     // Method to insert new data
 
-    async SetInventoryTypeList(reqData:any[], config:DBConfigEntity){
-        let retVal:any;
-        let mClient:MongoClient;
-        try{
-            if(reqData){
+    async SetInventoryTypeList(reqData: any[], config: DBConfigEntity) {
+        let retVal: any;
+        let mClient: MongoClient;
+        try {
+            if (reqData) {
                 //let config:DBConfigEntity = DBConfig;
                 mClient = await DBClient.GetMongoClient(config);
                 //config.UserDBName = "MediStockDB";
-                let db:Db = await mClient.db(config.UserDBName);
+                let db: Db = await mClient.db(config.UserDBName);
                 console.log("reqData 1");
                 console.log(reqData);
                 reqData = this.InsertDataManupulation(reqData);
@@ -28,7 +28,7 @@ class InventoryDBHandler{
                     res => {
                         retVal = "1 Product Successfully Inserted";
                     },
-                    err =>{
+                    err => {
                         retVal = err.errmsg;
                         console.log('err.errmsg');
                         console.log(err.errmsg);
@@ -36,11 +36,11 @@ class InventoryDBHandler{
                 );
             }
         }
-        catch(e){
+        catch (e) {
             throw e;
         }
-        finally{
-            if(mClient){
+        finally {
+            if (mClient) {
                 mClient.close();
             }
         }
@@ -49,7 +49,7 @@ class InventoryDBHandler{
 
     //Product Id Creation
 
-    public InsertDataManupulation(reqData:any[]){
+    public InsertDataManupulation(reqData: any[]) {
         reqData.forEach(element => {
             element.productId = "PRO_" + this.uuidv4();
             element.createddate = new Date();
@@ -57,7 +57,7 @@ class InventoryDBHandler{
             element.updatedDate = new Date();
             element.updatedBy = "Sourav C";
             element.Status = "Y";
-            element._id = element.productName.trim().replace(" ","_");
+            element._id = element.productName.trim().replace(" ", "_");
         });
 
         return reqData;
@@ -65,41 +65,41 @@ class InventoryDBHandler{
 
     //Remove a inventory product
 
-    async deleteInventoryTypeList(productNameobj:any, config:DBConfigEntity){
-        let retVal:any;
-        let mClient:MongoClient;
-        try{
-            if(productNameobj){
+    async DeleteInventoryTypeList(productNameobj: any, config: DBConfigEntity) {
+        let retVal: any;
+        let mClient: MongoClient;
+        try {
+            if (productNameobj) {
                 //let config:DBConfigEntity = DBConfig;
                 mClient = await DBClient.GetMongoClient(config);
-                let db:Db = await mClient.db(config.UserDBName);
-                    console.log(productNameobj.productId);
+                let db: Db = await mClient.db(config.UserDBName);
+                console.log(productNameobj.productId);
 
-                    let dltquery = { productId: productNameobj.productId };
-                    db.collection("inventoryType").deleteOne(dltquery).then(res => {
-                        console.log(res);
-                    });
+                let dltquery = { productId: productNameobj.productId };
+                db.collection("inventoryType").deleteOne(dltquery).then(res => {
+                    console.log(res);
+                });
 
-                    // db.collection("inventoryType").updateOne(
-                    //     { "productId" : productNameobj.productId },
-                    //     { $set: { "Status": "N"} }
-                    //  ).then(
-                    //     res => {
-                    //         console.log(res);
-                    //         retVal = res;
-                    //     }
-                    // );;
+                // db.collection("inventoryType").updateOne(
+                //     { "productId" : productNameobj.productId },
+                //     { $set: { "Status": "N"} }
+                //  ).then(
+                //     res => {
+                //         console.log(res);
+                //         retVal = res;
+                //     }
+                // );;
                 // db.collection("inventoryType").deleteMany(myquery, function(err, obj) {
                 //     if (err) throw err;
                 //     console.log("1 document deleted");
                 // });
             }
         }
-        catch(e){
+        catch (e) {
             throw e;
         }
-        finally{
-            if(mClient){
+        finally {
+            if (mClient) {
                 mClient.close();
             }
         }
@@ -107,26 +107,30 @@ class InventoryDBHandler{
     }
 
     // Update bulk product 
-    async UpdateInventoryTypeList(productobj:any[], config:DBConfigEntity){
-        let retVal:any;
-        let mClient:MongoClient;
-        let noofUpdate:any = 0;
-        try{
-            if(productobj){
+    async UpdateInventoryTypeList(productobj: any[], config: DBConfigEntity) {
+        let retVal: any;
+        let mClient: MongoClient;
+        let noofUpdate: any = 0;
+        try {
+            if (productobj) {
                 //let config:DBConfigEntity = DBConfig;
                 mClient = await DBClient.GetMongoClient(config);
-                let db:Db = await mClient.db(config.UserDBName);
+                let db: Db = await mClient.db(config.UserDBName);
                 console.log("productobj");
                 console.log(productobj);
 
-                for(let i=0;i<productobj.length;i++){
+                for (let i = 0; i < productobj.length; i++) {
                     await db.collection("inventoryType").updateOne(
-                        { "productId" : productobj[i].productId },
-                        { $set: { "companyName": productobj[i].companyName,
-                        "basecutOff": productobj[i].basecutOff ,
-                        "updatedDate": new Date(),
-                        "updatedBy":"Sourav C"} }
-                     ).then(
+                        { "productId": productobj[i].productId },
+                        {
+                            $set: {
+                                "companyName": productobj[i].companyName,
+                                "basecutOff": productobj[i].basecutOff,
+                                "updatedDate": new Date(),
+                                "updatedBy": "Sourav C"
+                            }
+                        }
+                    ).then(
                         res => {
                             //retVal = res;
                             console.log('res.result.nModified');
@@ -138,22 +142,22 @@ class InventoryDBHandler{
                 }
 
                 // productobj.forEach(async item => 
-                  
+
                 // );
 
-                    
+
                 // db.collection("inventoryType").deleteMany(myquery, function(err, obj) {
                 //     if (err) throw err;
                 //     console.log("1 document deleted");
                 // });
             }
         }
-        catch(e){
+        catch (e) {
             console.log(e);
             throw e;
         }
-        finally{
-            if(mClient){
+        finally {
+            if (mClient) {
                 mClient.close();
             }
         }
@@ -163,120 +167,120 @@ class InventoryDBHandler{
 
     //List of Inventory Product Type
 
-     async GetInventoryTypeList(listObj:any, config:DBConfigEntity){
-        let retdataVal:any;
-        let Count:number;
-        let mClient:MongoClient;
+    async GetInventoryTypeList(listObj: any, config: DBConfigEntity) {
+        let retdataVal: any;
+        let Count: number;
+        let mClient: MongoClient;
 
         let retVal = {
-            "res" : retdataVal,
-            "Count" : Count
+            "res": retdataVal,
+            "Count": Count
         }
 
-        try{
+        try {
             //if(listObj){
-                //let config:DBConfigEntity = DBConfig;
-                mClient = await DBClient.GetMongoClient(config);
-                let db:Db = await mClient.db(config.UserDBName);
-                //config.UserDBName = "MediStockDB";
-                // db.collection("inventoryType").find().limit(listObj.itemNo).toArray().then(res=>{
-                //     retVal = res;
-                // });
+            //let config:DBConfigEntity = DBConfig;
+            mClient = await DBClient.GetMongoClient(config);
+            let db: Db = await mClient.db(config.UserDBName);
+            //config.UserDBName = "MediStockDB";
+            // db.collection("inventoryType").find().limit(listObj.itemNo).toArray().then(res=>{
+            //     retVal = res;
+            // });
 
-                // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).toArray(function(err,docs) {
-                //     console.log(docs);
-                // });
-                // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).toArray(function(err,docs) {
-                //     console.log(docs);
-                // });
+            // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).toArray(function(err,docs) {
+            //     console.log(docs);
+            // });
+            // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).toArray(function(err,docs) {
+            //     console.log(docs);
+            // });
 
-                // await db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).skip(0*2).limit(2).toArray(function(err,docs) {
-                //     console.log(docs);
-                //     console.log("First two");
-                //     retVal = docs; 
-                // });
+            // await db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).skip(0*2).limit(2).toArray(function(err,docs) {
+            //     console.log(docs);
+            //     console.log("First two");
+            //     retVal = docs; 
+            // });
 
-                await db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).skip(0*2).limit(20).toArray().then(res=>{
-                    retVal.res = res;
-                }).catch(err=>{
-                    console.log(err);
-                });
+            await db.collection("inventoryType").find({}, { "sort": ['updatedDate', 'asc'] }).skip(0 * 2).limit(20).toArray().then(res => {
+                retVal.res = res;
+            }).catch(err => {
+                console.log(err);
+            });
 
-                await db.collection("inventoryType").find({}).count().then(res=>{
-                    retVal.Count = res;
-                }).catch(err=>{
-                    console.log(err);
-                });
+            await db.collection("inventoryType").find({}).count().then(res => {
+                retVal.Count = res;
+            }).catch(err => {
+                console.log(err);
+            });
 
-                // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).skip(1*2).limit(2).toArray(function(err,docs) {
-                //     console.log(docs);
-                //     console.log("Second two");
-                // });
+            // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).skip(1*2).limit(2).toArray(function(err,docs) {
+            //     console.log(docs);
+            //     console.log("Second two");
+            // });
 
-                // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).skip(2*2).limit(2).toArray(function(err,docs) {
-                //     console.log(docs);
-                //     console.log("Third two");
-                // });
+            // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).skip(2*2).limit(2).toArray(function(err,docs) {
+            //     console.log(docs);
+            //     console.log("Third two");
+            // });
 
-           // }
-            }
-            catch(e){
-                console.log(e);
-                throw e;
-            }
-            finally{
-                if(mClient){
-                    mClient.close();
-                }
-            }
-            
-        return retVal;
-    }
-
-    async InventoryTypeget(listObj:any, config:DBConfigEntity){
-        let retVal:any[];
-        let mClient:MongoClient;
-        try{
-            if(listObj){
-                //let config:DBConfigEntity = DBConfig;
-                mClient = await DBClient.GetMongoClient(config);
-                let db:Db = await mClient.db(config.UserDBName);
-                //config.UserDBName = "MediStockDB";
-                // db.collection("inventoryType").find().limit(listObj.itemNo).toArray().then(res=>{
-                //     retVal = res;
-                // });
-
-                // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).toArray(function(err,docs) {
-                //     console.log(docs);
-                // });
-                // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).toArray(function(err,docs) {
-                //     console.log(docs);
-                // });
-                let regexp = new RegExp("^"+ listObj.productName);
-                db.collection("inventoryType").find({productName: regexp}).toArray().then(arr=>{
-                    retVal = arr;
-                    console.log(arr);
-                })
-                .catch(err=>{
-                    throw err;
-                });
-            }
+            // }
         }
-        catch(e){
+        catch (e) {
             console.log(e);
             throw e;
         }
-        finally{
-            if(mClient){
+        finally {
+            if (mClient) {
+                mClient.close();
+            }
+        }
+
+        return retVal;
+    }
+
+    async InventoryTypeGet(listObj: any, config: DBConfigEntity) {
+        let retVal: any[];
+        let mClient: MongoClient;
+        try {
+            if (listObj) {
+                //let config:DBConfigEntity = DBConfig;
+                mClient = await DBClient.GetMongoClient(config);
+                let db: Db = await mClient.db(config.UserDBName);
+                //config.UserDBName = "MediStockDB";
+                // db.collection("inventoryType").find().limit(listObj.itemNo).toArray().then(res=>{
+                //     retVal = res;
+                // });
+
+                // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).toArray(function(err,docs) {
+                //     console.log(docs);
+                // });
+                // db.collection("inventoryType").find({}, {"sort" : ['updatedDate', 'asc']} ).toArray(function(err,docs) {
+                //     console.log(docs);
+                // });
+                let regexp = new RegExp("^" + listObj.productName);
+                db.collection("inventoryType").find({ productName: regexp }).toArray().then(arr => {
+                    retVal = arr;
+                    console.log(arr);
+                })
+                    .catch(err => {
+                        throw err;
+                    });
+            }
+        }
+        catch (e) {
+            console.log(e);
+            throw e;
+        }
+        finally {
+            if (mClient) {
                 mClient.close();
             }
         }
         return retVal;
     }
 
-    
 
-    
+
+
 
 }
 
