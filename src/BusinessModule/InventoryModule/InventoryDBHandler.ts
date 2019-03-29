@@ -1,22 +1,94 @@
 import { MongoClient, Db } from 'mongodb';
 
-import { DBConfigEntity } from '../../CommonModule/Entities';
-import { DBConfig } from '../../DBModule/DBConfig';
+import { DBConfigEntity, MethodResponse, DBConfiguaration } from '../../CommonModule/Entities';
+import { DBConfig, MainDBCollection, UserDBCollection } from '../../DBModule/DBConfig';
 import { DBClient } from '../../DBModule/DBClient';
 import { v4 } from 'uuid';
+import { isDate } from 'util';
 
 class InventoryDBHandler {
     private uuidv4 = v4;
 
     // Method to insert new data
 
-    async SetInventoryTypeList(reqData: any[], config: DBConfigEntity) {
-        let retVal: any;
+    async ValidateHeader(header: any) {
+        let retVal: MethodResponse = new MethodResponse();
+        let mClient: MongoClient;
+        let errorCode: number = 0;
+        try {
+            let result = null;
+            let config = DBConfig;
+            mClient = await DBClient.GetMongoClient(config);
+            let db: Db = await mClient.db(config.MainDBName);
+            let sessionId: string = '';
+            let userId: string = '';
+            if (header && header.sessionid) {
+                sessionId = header.sessionid;
+                userId = header.userid;
+            }
+            if (sessionId && sessionId.length > 0 && userId && userId.length > 0) {
+                await db.collection(MainDBCollection.ActiveSession).findOne({ sessionid: sessionId, userid: userId, active: 'Y' }).then(res => {
+                    if (res) {
+                        let currenttime = new Date();
+                        if (isDate(res.endtime) && currenttime < res.endtime) {
+                            result = res;
+                        } else {
+                            errorCode = 3;
+                        }
+                    } else {
+                        errorCode = 2;
+                    }
+                }).catch(err => {
+                    throw err;
+                });
+            } else {
+                errorCode = 1;
+            }
+            retVal.ErrorCode = errorCode;
+            switch (errorCode) {
+                case 1:
+                    retVal.Message = 'Header is not valid, it does not contain any session id.';
+                    break;
+                case 2:
+                    retVal.Message = 'No active session found.';
+                    break;
+                case 3:
+                    retVal.Message = 'Session timeout, login again.';
+                    break;
+                default:
+                    retVal.Result = {
+                        sessionid: result.sessionid,
+                        userid: result.userid,
+                        elapsedtime: result.endtime,
+                        usertype: result.usertype,
+                        userrole: result.role,
+                        username: result.username,
+                        userdb: result.userdb,
+                        userdburl: result.userdburl
+                    };
+                    break;
+            }
+        } catch (e) {
+            throw e;
+        }
+        finally {
+            if (mClient) {
+                mClient.close();
+            }
+        }
+        return retVal;
+    }
+
+    async SetInventoryTypeList(reqData: any[], config: DBConfiguaration) {
+        let retVal: MethodResponse = new MethodResponse();
         let mClient: MongoClient;
         try {
             if (reqData) {
+                let initconfig: DBConfigEntity = DBConfig;
+                initconfig.UserDBUrl = config.UserDBUrl;
+                initconfig.UserDBName = config.UserDBName;
                 //let config:DBConfigEntity = DBConfig;
-                mClient = await DBClient.GetMongoClient(config);
+                mClient = await DBClient.GetMongoClient(initconfig);
                 //config.UserDBName = "MediStockDB";
                 let db: Db = await mClient.db(config.UserDBName);
                 console.log("reqData 1");
@@ -26,10 +98,10 @@ class InventoryDBHandler {
                 console.log(reqData);
                 await db.collection("inventoryType").insertMany(reqData).then(
                     res => {
-                        retVal = "1 Product Successfully Inserted";
+                        retVal.Message = "1 Product Successfully Inserted";
                     },
                     err => {
-                        retVal = err.errmsg;
+                        retVal.Message = err.errmsg;
                         console.log('err.errmsg');
                         console.log(err.errmsg);
                     }
@@ -65,19 +137,25 @@ class InventoryDBHandler {
 
     //Remove a inventory product
 
-    async DeleteInventoryTypeList(productNameobj: any, config: DBConfigEntity) {
-        let retVal: any;
+    async DeleteInventoryTypeList(productNameobj: any, config: DBConfiguaration) {
+        let retVal: MethodResponse = new MethodResponse();
         let mClient: MongoClient;
         try {
             if (productNameobj) {
+                let initconfig: DBConfigEntity = DBConfig;
+                initconfig.UserDBUrl = config.UserDBUrl;
+                initconfig.UserDBName = config.UserDBName;
                 //let config:DBConfigEntity = DBConfig;
-                mClient = await DBClient.GetMongoClient(config);
+                mClient = await DBClient.GetMongoClient(initconfig);
                 let db: Db = await mClient.db(config.UserDBName);
                 console.log(productNameobj.productId);
 
                 let dltquery = { productId: productNameobj.productId };
                 db.collection("inventoryType").deleteOne(dltquery).then(res => {
                     console.log(res);
+                    if (res.deletedCount > 0) {
+                        retVal.Message = 'Item is sucessfully deleted.';
+                    }
                 });
 
                 // db.collection("inventoryType").updateOne(
@@ -107,14 +185,17 @@ class InventoryDBHandler {
     }
 
     // Update bulk product 
-    async UpdateInventoryTypeList(productobj: any[], config: DBConfigEntity) {
-        let retVal: any;
+    async UpdateInventoryTypeList(productobj: any[], config: DBConfiguaration) {
+        let retVal: MethodResponse = new MethodResponse();
         let mClient: MongoClient;
         let noofUpdate: any = 0;
         try {
             if (productobj) {
+                let initconfig: DBConfigEntity = DBConfig;
+                initconfig.UserDBUrl = config.UserDBUrl;
+                initconfig.UserDBName = config.UserDBName;
                 //let config:DBConfigEntity = DBConfig;
-                mClient = await DBClient.GetMongoClient(config);
+                mClient = await DBClient.GetMongoClient(initconfig);
                 let db: Db = await mClient.db(config.UserDBName);
                 console.log("productobj");
                 console.log(productobj);
@@ -161,26 +242,22 @@ class InventoryDBHandler {
                 mClient.close();
             }
         }
-        retVal = noofUpdate + "Updated";
+        retVal.Message = noofUpdate + "Updated";
         return retVal;
     }
 
     //List of Inventory Product Type
 
-    async GetInventoryTypeList(listObj: any, config: DBConfigEntity) {
-        let retdataVal: any;
-        let Count: number;
+    async GetInventoryTypeList(listObj: any, config: DBConfiguaration) {
         let mClient: MongoClient;
-
-        let retVal = {
-            "res": retdataVal,
-            "Count": Count
-        }
-
+        let retVal: MethodResponse = new MethodResponse();
         try {
+            let initconfig: DBConfigEntity = DBConfig;
+            initconfig.UserDBUrl = config.UserDBUrl;
+            initconfig.UserDBName = config.UserDBName;
             //if(listObj){
             //let config:DBConfigEntity = DBConfig;
-            mClient = await DBClient.GetMongoClient(config);
+            mClient = await DBClient.GetMongoClient(initconfig);
             let db: Db = await mClient.db(config.UserDBName);
             //config.UserDBName = "MediStockDB";
             // db.collection("inventoryType").find().limit(listObj.itemNo).toArray().then(res=>{
@@ -201,13 +278,13 @@ class InventoryDBHandler {
             // });
 
             await db.collection("inventoryType").find({}, { "sort": ['updatedDate', 'asc'] }).skip(0 * 2).limit(20).toArray().then(res => {
-                retVal.res = res;
+                retVal.Result = res;
             }).catch(err => {
                 console.log(err);
             });
 
             await db.collection("inventoryType").find({}).count().then(res => {
-                retVal.Count = res;
+                retVal.ResultCount = res;
             }).catch(err => {
                 console.log(err);
             });
@@ -237,13 +314,16 @@ class InventoryDBHandler {
         return retVal;
     }
 
-    async InventoryTypeGet(listObj: any, config: DBConfigEntity) {
-        let retVal: any[];
+    async InventoryTypeGet(listObj: any, config: DBConfiguaration) {
+        let retVal: MethodResponse = new MethodResponse();
         let mClient: MongoClient;
         try {
             if (listObj) {
+                let initconfig: DBConfigEntity = DBConfig;
+                initconfig.UserDBUrl = config.UserDBUrl;
+                initconfig.UserDBName = config.UserDBName;
                 //let config:DBConfigEntity = DBConfig;
-                mClient = await DBClient.GetMongoClient(config);
+                mClient = await DBClient.GetMongoClient(initconfig);
                 let db: Db = await mClient.db(config.UserDBName);
                 //config.UserDBName = "MediStockDB";
                 // db.collection("inventoryType").find().limit(listObj.itemNo).toArray().then(res=>{
@@ -258,7 +338,7 @@ class InventoryDBHandler {
                 // });
                 let regexp = new RegExp("^" + listObj.productName);
                 db.collection("inventoryType").find({ productName: regexp }).toArray().then(arr => {
-                    retVal = arr;
+                    retVal.Result = arr;
                     console.log(arr);
                 })
                     .catch(err => {

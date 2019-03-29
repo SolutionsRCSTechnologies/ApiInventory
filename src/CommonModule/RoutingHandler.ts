@@ -1,5 +1,3 @@
-import { LoginHandle } from '../BusinessModule/AuthModule/Login/LoginHandler';
-import { RegistrationHandle } from '../BusinessModule/AuthModule/Register/RegistrationHandler';
 import { inventoryHandle } from '../BusinessModule/InventoryModule/InventoryHandler';
 import { Util } from './UtilHandler';
 
@@ -9,31 +7,17 @@ enum APIMethodType {
 };
 
 class RoutingMethods {
-    // public async Login(reqData: any) {
-    //     let retVal: any;
-    //     try {
-    //         retVal = await LoginHandle.Login(reqData);
-    //     }
-    //     catch (e) {
-    //         throw e;
-    //     }
-    //     return retVal;
-    // }
-    // public async Register(reqData: any) {
-    //     let retVal: any;
-    //     try {
-    //         retVal = await RegistrationHandle.Register(reqData);
-    //     }
-    //     catch (e) {
-    //         throw e;
-    //     }
-    //     return retVal;
-    // }
-
     public async InventoryTypeAdd(reqData: any) {
         let retVal: any;
         try {
-            retVal = await inventoryHandle.SetInventoryTypeList(reqData);
+            if (await Util.ValidateRequestStructure(reqData)) {
+                let header: any = reqData.header;
+                let body: any = reqData.body;
+                retVal = await inventoryHandle.SetInventoryTypeList(header, body);
+            } else {
+                retVal.ErrorCode = 1;
+                retVal.Message = 'Invalid request.';
+            }
         }
         catch (e) {
             throw e;
@@ -42,23 +26,16 @@ class RoutingMethods {
     }
 
     public async AddUpdateInventoryType(reqData: any) {
-        console.log(100);
-        console.log(reqData);
         let retVal: any;
         try {
-            retVal = await inventoryHandle.AddUpdateInventoryType(reqData);
-        }
-        catch (e) {
-            console.log(e);
-            throw e;
-        }
-        return retVal;
-    }
-
-    public async InventoryTypeDelete(productNameobj: any) {
-        let retVal: any;
-        try {
-            retVal = await inventoryHandle.DeleteInventoryTypeList(productNameobj);
+            if (await Util.ValidateRequestStructure(reqData)) {
+                let header: any = reqData.header;
+                let body: any = reqData.body;
+                retVal = await inventoryHandle.AddUpdateInventoryType(header, body);
+            } else {
+                retVal.ErrorCode = 1;
+                retVal.Message = 'Invalid request.';
+            }
         }
         catch (e) {
             throw e;
@@ -66,12 +43,35 @@ class RoutingMethods {
         return retVal;
     }
 
-    public async InventoryTypeList(listObj: any) {
+    public async InventoryTypeDelete(reqData: any) {
         let retVal: any;
         try {
-            console.log(1);
-            retVal = await inventoryHandle.GetInventoryTypeList(listObj);
-            console.log(2);
+            if (await Util.ValidateRequestStructure(reqData)) {
+                let header: any = reqData.header;
+                let body: any = reqData.body;
+                retVal = await inventoryHandle.DeleteInventoryTypeList(header, body);
+            } else {
+                retVal.ErrorCode = 1;
+                retVal.Message = 'Invalid request.';
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+        return retVal;
+    }
+
+    public async InventoryTypeList(reqData: any) {
+        let retVal: any;
+        try {
+            if (await Util.ValidateRequestStructure(reqData)) {
+                let header: any = reqData.header;
+                let body: any = reqData.body;
+                retVal = await inventoryHandle.GetInventoryTypeList(header, body);
+            } else {
+                retVal.ErrorCode = 1;
+                retVal.Message = 'Invalid request.';
+            }
         }
         catch (e) {
             throw e;
@@ -82,7 +82,68 @@ class RoutingMethods {
     public async InventoryTypeGet(reqData: any) {
         let retVal: any;
         try {
-            retVal = await inventoryHandle.InventoryTypeGet(reqData);
+            if (await Util.ValidateRequestStructure(reqData)) {
+                let header: any = reqData.header;
+                let body: any = reqData.body;
+                retVal = await inventoryHandle.InventoryTypeGet(header, body);
+            } else {
+                retVal.ErrorCode = 1;
+                retVal.Message = 'Invalid request.';
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+        return retVal;
+    }
+
+    public async GetInventoryItems(reqData: any) {
+        let retVal: any;
+        try {
+            if (await Util.ValidateRequestStructure(reqData)) {
+                let header: any = reqData.header;
+                let body: any = reqData.body;
+                //retVal = await inventoryHandle.InventoryTypeGet(header, body);
+            } else {
+                retVal.ErrorCode = 1;
+                retVal.Message = 'Invalid request.';
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+        return retVal;
+    }
+
+    public async AddOrUpdateInventoryItems(reqData: any) {
+        let retVal: any;
+        try {
+            if (await Util.ValidateRequestStructure(reqData)) {
+                let header: any = reqData.header;
+                let body: any = reqData.body;
+                //retVal = await inventoryHandle.InventoryTypeGet(header, body);
+            } else {
+                retVal.ErrorCode = 1;
+                retVal.Message = 'Invalid request.';
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+        return retVal;
+    }
+
+    public async RemoveInventoryItems(reqData: any) {
+        let retVal: any;
+        try {
+            if (await Util.ValidateRequestStructure(reqData)) {
+                let header: any = reqData.header;
+                let body: any = reqData.body;
+                //retVal = await inventoryHandle.InventoryTypeGet(header, body);
+            } else {
+                retVal.ErrorCode = 1;
+                retVal.Message = 'Invalid request.';
+            }
         }
         catch (e) {
             throw e;
@@ -93,25 +154,6 @@ class RoutingMethods {
 }
 
 export const RoutingHandler = [
-    // {
-    //     url:"/",
-    //     handler: Util.ShowEndPoints,
-    //     method: APIMethodType.GET,
-    //     name: "Show Endpoints"
-    // },
-    // {
-    //     url: "/auth/login",
-    //     handler: new RoutingMethods().Login,
-    //     method: APIMethodType.POST,
-    //     name: "Login Api"
-
-    // },
-    // {
-    //     url: "/auth/register",
-    //     handler: new RoutingMethods().Register,
-    //     method: APIMethodType.POST,
-    //     name: "Registration Api"
-    // },
     {
         url: "/inventory/type/add",
         handler: new RoutingMethods().InventoryTypeAdd,
@@ -141,6 +183,24 @@ export const RoutingHandler = [
         handler: new RoutingMethods().InventoryTypeGet,
         method: APIMethodType.POST,
         name: "Inventory Type Get Api"
+    },
+    {
+        url: "/inventory/items/get",
+        handler: new RoutingMethods().GetInventoryItems,
+        method: APIMethodType.POST,
+        name: "Inventory Get Api"
+    },
+    {
+        url: "/inventory/items/update",
+        handler: new RoutingMethods().AddOrUpdateInventoryItems,
+        method: APIMethodType.POST,
+        name: "Inventory Add/Update Api"
+    },
+    {
+        url: "/inventory/items/remove",
+        handler: new RoutingMethods().RemoveInventoryItems,
+        method: APIMethodType.POST,
+        name: "Inventory Delete Api"
     }
 ];
 
