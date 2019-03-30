@@ -78,7 +78,6 @@ class RoutingMethods {
         }
         return retVal;
     }
-
     public async InventoryTypeGet(reqData: any) {
         let retVal: any;
         try {
@@ -151,6 +150,17 @@ class RoutingMethods {
         return retVal;
     }
 
+
+    public async inventoryprodtypeaddupdate(reqData: any) {
+        let retVal: any;
+        try {
+            retVal = await inventoryHandle.SetInventoryprodTypeList(reqData);
+        }
+        catch (e) {
+            throw e;
+        }
+        return retVal;
+    }
 }
 
 export const RoutingHandler = [
@@ -201,6 +211,12 @@ export const RoutingHandler = [
         handler: new RoutingMethods().RemoveInventoryItems,
         method: APIMethodType.POST,
         name: "Inventory Delete Api"
+    },
+    {
+        url: "/inventory/product/type/add",
+        handler: new RoutingMethods().inventoryprodtypeaddupdate,
+        method: APIMethodType.POST,
+        name: "Inventory Product Type Add Api"
     }
 ];
 

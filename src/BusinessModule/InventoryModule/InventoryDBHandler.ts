@@ -91,11 +91,7 @@ class InventoryDBHandler {
                 mClient = await DBClient.GetMongoClient(initconfig);
                 //config.UserDBName = "MediStockDB";
                 let db: Db = await mClient.db(config.UserDBName);
-                console.log("reqData 1");
-                console.log(reqData);
-                reqData = this.InsertDataManupulation(reqData);
-                console.log("reqData");
-                console.log(reqData);
+                reqData = this.InsertDataManupulation(reqData, 'PRO');
                 await db.collection("inventoryType").insertMany(reqData).then(
                     res => {
                         retVal.Message = "1 Product Successfully Inserted";
@@ -120,23 +116,27 @@ class InventoryDBHandler {
     }
 
     //Product Id Creation
-
-    public InsertDataManupulation(reqData: any[]) {
+    public InsertDataManupulation(reqData: any[], type?) {
         reqData.forEach(element => {
-            element.productId = "PRO_" + this.uuidv4();
+
             element.createddate = new Date();
             element.createdBy = "Sourav C";
             element.updatedDate = new Date();
             element.updatedBy = "Sourav C";
             element.Status = "Y";
-            element._id = element.productName.trim().replace(" ", "_");
+            if (type == 'PRO') {
+                element.productId = type + "_" + this.uuidv4();
+                element._id = element.productName.trim().replace(" ", "_");
+            }
+            else {
+                element.inventoryId = type + "_" + this.uuidv4();
+            }
         });
 
         return reqData;
     }
 
     //Remove a inventory product
-
     async DeleteInventoryTypeList(productNameobj: any, config: DBConfiguaration) {
         let retVal: MethodResponse = new MethodResponse();
         let mClient: MongoClient;
@@ -150,13 +150,47 @@ class InventoryDBHandler {
                 let db: Db = await mClient.db(config.UserDBName);
                 console.log(productNameobj.productId);
 
-                let dltquery = { productId: productNameobj.productId };
-                db.collection("inventoryType").deleteOne(dltquery).then(res => {
-                    console.log(res);
-                    if (res.deletedCount > 0) {
-                        retVal.Message = 'Item is sucessfully deleted.';
-                    }
-                });
+                if (productNameobj.inventorytype == 'PRO') {
+
+                    await db.collection("inventoryType").updateOne(
+                        { "productId": productNameobj.productId },
+                        {
+                            $set: {
+                                "Status": 'N',
+                                "updatedDate": new Date(),
+                                "updatedBy": "Sourav C"
+                            }
+                        }
+                    ).then(
+                        res => {
+                            //retVal = res;
+                            console.log('res.result.nModified');
+                            console.log(res.result.nModified);
+                            //noofUpdate = noofUpdate + res.result.nModified;
+                            retVal.Message = res.result.nModified + "product" + " updated";
+                        }
+                    );
+                }
+                else {
+                    await db.collection("inventoryprodType").updateOne(
+                        { "inventoryId": productNameobj.productId },
+                        {
+                            $set: {
+                                "Status": 'N',
+                                "updatedDate": new Date(),
+                                "updatedBy": "Sourav C"
+                            }
+                        }
+                    ).then(
+                        res => {
+                            //retVal = res;
+                            console.log('res.result.nModified');
+                            console.log(res.result.nModified);
+                            //noofUpdate = noofUpdate + res.result.nModified;
+                            retVal.Message = res.result.nModified + "product" + " updated";
+                        }
+                    );
+                }
 
                 // db.collection("inventoryType").updateOne(
                 //     { "productId" : productNameobj.productId },
@@ -358,10 +392,150 @@ class InventoryDBHandler {
         return retVal;
     }
 
+    async SetInventoryprodTypeList(reqData: any[], config: DBConfigEntity) {
+        let retVal: any;
+        let mClient: MongoClient;
+        try {
+            if (reqData) {
+                //let config:DBConfigEntity = DBConfig;
+                mClient = await DBClient.GetMongoClient(config);
+                //config.UserDBName = "MediStockDB";
+                let db: Db = await mClient.db(config.UserDBName);
+                console.log("reqData 1");
+                console.log(reqData);
+                reqData = this.InsertDataManupulation(reqData, 'INV');
+                console.log("reqData");
+                console.log(reqData);
+                await db.collection("inventoryprodType").insertMany(reqData).then(
+                    res => {
+                        retVal = "1 inventory Product Successfully Inserted";
+                    },
+                    err => {
+                        retVal = err.errmsg;
+                        console.log('err.errmsg');
+                        console.log(err.errmsg);
+                    }
+                );
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+        finally {
+            if (mClient) {
+                mClient.close();
+            }
+        }
+        return retVal;
+    }
+
+    async GetInventoryProdTypeList(listObj: any, config: DBConfigEntity) {
+        let retdataVal: any;
+        let Count: number;
+        let mClient: MongoClient;
+
+        let retVal = {
+            "res": retdataVal,
+            "Count": Count
+        }
+
+        try {
+            //if(listObj){
+            //let config:DBConfigEntity = DBConfig;
+            mClient = await DBClient.GetMongoClient(config);
+            let db: Db = await mClient.db(config.UserDBName);
+            // await db.collection("inventoryprodType").find({}, {"sort" : ['updatedDate', 'asc']} ).skip(0*2).limit(20).toArray().then(res=>{
+            //     retVal.res = res;
+            // }).catch(err=>{
+            //     console.log(err);
+            // });
+            // await db.collection("inventoryprodType").find({}).count().then(res=>{
+            //     retVal.Count = res;
+            // }).catch(err=>{
+            //     console.log(err);
+            // });
+
+            await db.collection("inventoryprodType").find({ Status: "Y" }).toArray().then(res => {
+                retVal.res = res;
+                retVal.Count = res.length;
+            }).catch(err => {
+                console.log(err);
+            });
+        }
+        catch (e) {
+            console.log(e);
+            throw e;
+        }
+        finally {
+            if (mClient) {
+                mClient.close();
+            }
+        }
+
+        return retVal;
+    }
 
 
 
+    async UpdateInventoryprodTypeList(productobj: any[], config: DBConfigEntity) {
+        let retVal: any;
+        let mClient: MongoClient;
+        let noofUpdate: any = 0;
+        try {
+            if (productobj) {
+                //let config:DBConfigEntity = DBConfig;
+                mClient = await DBClient.GetMongoClient(config);
+                let db: Db = await mClient.db(config.UserDBName);
+                console.log("productobj");
+                console.log(productobj);
 
+                for (let i = 0; i < productobj.length; i++) {
+                    await db.collection("inventoryprodType").updateOne(
+                        { "inventoryId": productobj[i].inventoryId },
+                        {
+                            $set: {
+                                "count": productobj[i].count,
+                                "discount": productobj[i].discount,
+                                "mrp": productobj[i].mrp,
+                                "salesprice": productobj[i].salesprice,
+                                "updatedDate": new Date(),
+                                "updatedBy": "Sourav C"
+                            }
+                        }
+                    ).then(
+                        res => {
+                            //retVal = res;
+                            console.log('res.result.nModified');
+                            console.log(res.result.nModified);
+                            noofUpdate = noofUpdate + res.result.nModified;
+                            //retVal = res.result.nModified + "product"+ " updated";
+                        }
+                    );
+                }
+
+                // productobj.forEach(async item =>
+
+                // );
+
+
+                // db.collection("inventoryType").deleteMany(myquery, function(err, obj) {
+                //     if (err) throw err;
+                //     console.log("1 document deleted");
+                // });
+            }
+        }
+        catch (e) {
+            console.log(e);
+            throw e;
+        }
+        finally {
+            if (mClient) {
+                mClient.close();
+            }
+        }
+        retVal = noofUpdate + "Updated";
+        return retVal;
+    }
 }
 
 export let InventoryDBHandle = new InventoryDBHandler();
